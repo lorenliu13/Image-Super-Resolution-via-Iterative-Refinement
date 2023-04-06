@@ -13,7 +13,7 @@ import numpy as np
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # config: set up a JSON file for configuration, two alternative names "-c" and "--config"
-    parser.add_argument('-c', '--config', type=str, default='config/sr_sr3_16_128_test.json',
+    parser.add_argument('-c', '--config', type=str, default='config/sr_sr3_era_32_128_local_test.json',
                         help='JSON file for configuration')
     # phase: whether the script should be run in training or validation (val) mode
     parser.add_argument('-p', '--phase', type=str, choices=['train', 'val'],
@@ -117,7 +117,7 @@ if __name__ == "__main__":
                     avg_psnr = 0.0
                     idx = 0
                     result_path = '{}/{}'.format(opt['path']
-                                                 ['results'], current_epoch) # create the result path "path/results"
+                                                 ['results'], current_epoch) # create the result path "results/current_epoch"
                     os.makedirs(result_path, exist_ok=True)
 
                     diffusion.set_new_noise_schedule(
@@ -127,20 +127,21 @@ if __name__ == "__main__":
                         diffusion.feed_data(val_data)
                         diffusion.test(continous=False)
                         visuals = diffusion.get_current_visuals()
-                        sr_img = Metrics.tensor2img(visuals['SR'])  # uint8
-                        hr_img = Metrics.tensor2img(visuals['HR'])  # uint8
-                        lr_img = Metrics.tensor2img(visuals['LR'])  # uint8
-                        fake_img = Metrics.tensor2img(visuals['INF'])  # uint8
+                        # convert the tensor to numpy array
+                        sr_img = Metrics.tensor2numpy(visuals['SR'])
+                        hr_img = Metrics.tensor2numpy(visuals['HR'])
+                        lr_img = Metrics.tensor2numpy(visuals['LR'])
+                        fake_img = Metrics.tensor2numpy(visuals['INF'])
 
                         # generation
-                        Metrics.save_img(
-                            hr_img, '{}/{}_{}_hr.png'.format(result_path, current_step, idx))
-                        Metrics.save_img(
-                            sr_img, '{}/{}_{}_sr.png'.format(result_path, current_step, idx))
-                        Metrics.save_img(
-                            lr_img, '{}/{}_{}_lr.png'.format(result_path, current_step, idx))
-                        Metrics.save_img(
-                            fake_img, '{}/{}_{}_inf.png'.format(result_path, current_step, idx))
+                        Metrics.save_numpy(
+                            hr_img, '{}/{}_{}_hr.npy'.format(result_path, current_step, idx))
+                        Metrics.save_numpy(
+                            sr_img, '{}/{}_{}_sr.npy'.format(result_path, current_step, idx))
+                        Metrics.save_numpy(
+                            lr_img, '{}/{}_{}_lr.npy'.format(result_path, current_step, idx))
+                        Metrics.save_numpy(
+                            fake_img, '{}/{}_{}_inf.npy'.format(result_path, current_step, idx))
                         tb_logger.add_image(
                             'Iter_{}'.format(current_step),
                             np.transpose(np.concatenate(

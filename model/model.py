@@ -9,7 +9,10 @@ from .base_model import BaseModel
 logger = logging.getLogger('base')
 
 
-class DDPM(BaseModel):
+class DDPM(BaseModel): # inherits from "Basemodel"
+    """
+
+    """
     def __init__(self, opt):
         super(DDPM, self).__init__(opt)
         # define network and load pretrained models

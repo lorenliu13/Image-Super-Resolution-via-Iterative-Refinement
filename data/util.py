@@ -13,6 +13,9 @@ def is_image_file(filename):
 
 
 def get_paths_from_images(path):
+    """
+    Get path from images
+    """
     assert os.path.isdir(path), '{:s} is not a valid directory'.format(path)
     images = []
     for dirpath, _, fnames in sorted(os.walk(path)):
@@ -71,13 +74,23 @@ def transform2tensor(img, min_max=(0, 1)):
 
 
 # implementation by torchvision, detail in https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement/issues/14
-totensor = torchvision.transforms.ToTensor()
-hflip = torchvision.transforms.RandomHorizontalFlip()
-def transform_augment(img_list, split='val', min_max=(0, 1)):    
-    imgs = [totensor(img) for img in img_list]
+totensor = torchvision.transforms.ToTensor() # converts a PIL image or numpy.ndarray to a Pytorch tensor
+# convert the img to tensor data type
+# rescale the pixel values from original value (0-255) to floating point between 0 and 1, basically, divide each pixel value by 255
+# if there is 3 channel image, change the order from height, width, channel to channel, height, width
+hflip = torchvision.transforms.RandomHorizontalFlip() # horizontally flips the given image randomly with default prob 0.5
+def transform_augment(img_list, split='val', min_max=(0, 1)):
+    """
+
+    img_list: a list of image to apply augmentation
+    split: whether the data is for training or validation
+    min_max: specifying the minimum and maximum values to normalize the data
+    """
+    imgs = [totensor(img) for img in img_list] # conver the input images to tensors
     if split == 'train':
+        # if phrase is train, apply the horizontal flip augmentation
         imgs = torch.stack(imgs, 0)
         imgs = hflip(imgs)
         imgs = torch.unbind(imgs, dim=0)
-    ret_img = [img * (min_max[1] - min_max[0]) + min_max[0] for img in imgs]
+    ret_img = [img * (min_max[1] - min_max[0]) + min_max[0] for img in imgs] # normalize the image tensors by scaling them with min_max
     return ret_img

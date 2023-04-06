@@ -15,9 +15,12 @@ import time
 
 
 def resize_and_convert(img, size, resample):
+    """
+    Resize and crop the input image to specified size, using the specified resampling method
+    """
     if(img.size[0] != size):
-        img = trans_fn.resize(img, size, resample)
-        img = trans_fn.center_crop(img, size)
+        img = trans_fn.resize(img, size, resample) # resize the input image to target size
+        img = trans_fn.center_crop(img, size) # crop the resized image to target size from the center
     return img
 
 
@@ -28,9 +31,9 @@ def image_convert_bytes(img):
 
 
 def resize_multiple(img, sizes=(16, 128), resample=Image.BICUBIC, lmdb_save=False):
-    lr_img = resize_and_convert(img, sizes[0], resample)
-    hr_img = resize_and_convert(img, sizes[1], resample)
-    sr_img = resize_and_convert(lr_img, sizes[1], resample)
+    lr_img = resize_and_convert(img, sizes[0], resample) # resize the img and crop to low size
+    hr_img = resize_and_convert(img, sizes[1], resample) # resize the img to high-res size
+    sr_img = resize_and_convert(lr_img, sizes[1], resample) # resize the lr img to high resolution
 
     if lmdb_save:
         lr_img = image_convert_bytes(lr_img)
@@ -40,8 +43,8 @@ def resize_multiple(img, sizes=(16, 128), resample=Image.BICUBIC, lmdb_save=Fals
     return [lr_img, hr_img, sr_img]
 
 def resize_worker(img_file, sizes, resample, lmdb_save=False):
-    img = Image.open(img_file)
-    img = img.convert('RGB')
+    img = Image.open(img_file) # open the image from filepath
+    img = img.convert('RGB') # convert to RGB color mode, has 3 color channels
     out = resize_multiple(
         img, sizes=sizes, resample=resample, lmdb_save=lmdb_save)
 
@@ -98,16 +101,25 @@ def all_threads_inactive(worker_threads):
     return True
 
 def prepare(img_path, out_path, n_worker, sizes=(16, 128), resample=Image.BICUBIC, lmdb_save=False):
+    """
+    Preprocess a dataset of images
+    img_path: path to the original dataset of images
+    out_path: path to the output directory
+    n_worker: number of worker threads (multi-processing)
+    size: size of LR, HR images
+    resample: resampling method for resizing images
+    lmdb_save: whether save the processed dataset in LMDB format
+    """
     resize_fn = partial(resize_worker, sizes=sizes,
-                        resample=resample, lmdb_save=lmdb_save)
+                        resample=resample, lmdb_save=lmdb_save) # fix 3 parameters for resize_worker function
     files = [p for p in Path(
-        '{}'.format(img_path)).glob(f'**/*')]
+        '{}'.format(img_path)).glob(f'**/*')] # create a list of directories
 
     if not lmdb_save:
-        os.makedirs(out_path, exist_ok=True)
-        os.makedirs('{}/lr_{}'.format(out_path, sizes[0]), exist_ok=True)
-        os.makedirs('{}/hr_{}'.format(out_path, sizes[1]), exist_ok=True)
-        os.makedirs('{}/sr_{}_{}'.format(out_path,
+        os.makedirs(out_path, exist_ok=True) # create main output directory
+        os.makedirs('{}/lr_{}'.format(out_path, sizes[0]), exist_ok=True) # create a sub-directory for lr imgs
+        os.makedirs('{}/hr_{}'.format(out_path, sizes[1]), exist_ok=True) # create a sub-directory for hr imgs
+        os.makedirs('{}/sr_{}_{}'.format(out_path, # storing imgs that from lr to hr but using bilinear interp
                     sizes[0], sizes[1]), exist_ok=True)
     else:
         env = lmdb.open(out_path, map_size=1024 ** 4, readahead=False)
@@ -118,7 +130,7 @@ def prepare(img_path, out_path, n_worker, sizes=(16, 128), resample=Image.BICUBI
         if lmdb_save:
             multi_env = env
 
-        file_subsets = np.array_split(files, n_worker)
+        file_subsets = np.array_split(files, n_worker) # split files by number of n_workers
         worker_threads = []
         wctx = WorkingContext(resize_fn, lmdb_save, out_path, multi_env, sizes)
 
@@ -160,15 +172,20 @@ def prepare(img_path, out_path, n_worker, sizes=(16, 128), resample=Image.BICUBI
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    # set the path to the original dataset of images
     parser.add_argument('--path', '-p', type=str,
                         default='{}/Dataset/celebahq_256'.format(Path.home()))
+    # set the path to the output dataset
     parser.add_argument('--out', '-o', type=str,
                         default='./dataset/celebahq')
-
+    # specifies the size of output images, (LR, HR)
     parser.add_argument('--size', type=str, default='64,512')
+    # set the number of working threads
     parser.add_argument('--n_worker', type=int, default=3)
+    # set the resampling method
     parser.add_argument('--resample', type=str, default='bicubic')
     # default save in png format
+    # action = 'store_ture' means that if this argument is present, then the value of args.lmdb will be set to ture
     parser.add_argument('--lmdb', '-l', action='store_true')
 
     args = parser.parse_args()

@@ -88,10 +88,10 @@ def define_G(opt):
         from .sr3_modules import diffusion, unet
     if ('norm_groups' not in model_opt['unet']) or model_opt['unet']['norm_groups'] is None:
         model_opt['unet']['norm_groups']=32
-    model = unet.UNet(
-        in_channel=model_opt['unet']['in_channel'],
-        out_channel=model_opt['unet']['out_channel'],
-        norm_groups=model_opt['unet']['norm_groups'],
+    model = unet.UNet( # call the UNet function
+        in_channel=model_opt['unet']['in_channel'], # set up input channel number
+        out_channel=model_opt['unet']['out_channel'], # set up output channel number
+        norm_groups=model_opt['unet']['norm_groups'], #
         inner_channel=model_opt['unet']['inner_channel'],
         channel_mults=model_opt['unet']['channel_multiplier'],
         attn_res=model_opt['unet']['attn_res'],
@@ -107,10 +107,10 @@ def define_G(opt):
         conditional=model_opt['diffusion']['conditional'],
         schedule_opt=model_opt['beta_schedule']['train']
     )
-    if opt['phase'] == 'train':
+    if opt['phase'] == 'train': # if the phrase is train, weights of the model are initalized
         # init_weights(netG, init_type='kaiming', scale=0.1)
         init_weights(netG, init_type='orthogonal')
     if opt['gpu_ids'] and opt['distributed']:
         assert torch.cuda.is_available()
-        netG = nn.DataParallel(netG)
+        netG = nn.DataParallel(netG) # enable parallel training across multiple GPUs
     return netG

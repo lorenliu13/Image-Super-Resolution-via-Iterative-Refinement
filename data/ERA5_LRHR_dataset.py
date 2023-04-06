@@ -4,12 +4,14 @@ from PIL import Image
 from torch.utils.data import Dataset
 import random
 import data.util as Util
+import cv2
+import numpy as np
 
 
-class LRHRDataset(Dataset):
+class ERA5_LRHRDataset(Dataset):
     def __init__(self, dataroot, datatype, l_resolution=16, r_resolution=128, split='train', data_len=-1, need_LR=False):
         """
-        A custom dataset for LR/HR image pairs
+        A custom dataset for LR/HR image pairs from ERA5 dataset
         dataroot: directory of lr, hr, sr images
         datatype: data type, 'img' or 'lmdb'
         l_resolution: lower resolution
@@ -100,10 +102,19 @@ class LRHRDataset(Dataset):
                 if self.need_LR:
                     img_LR = Image.open(BytesIO(lr_img_bytes)).convert("RGB")
         else: # if it is 'img' object
-            img_HR = Image.open(self.hr_path[index]).convert("RGB") # open the image and convert to RGB
-            img_SR = Image.open(self.sr_path[index]).convert("RGB") # open the image and convert to RGB
+            img_HR = cv2.imread(self.hr_path[index], cv2.IMREAD_ANYDEPTH | cv2.IMREAD_GRAYSCALE) # load the img
+            img_HR = (img_HR / 65535).astype(np.float32) # restore it to 0 and 1
+            img_SR = cv2.imread(self.sr_path[index], cv2.IMREAD_ANYDEPTH | cv2.IMREAD_GRAYSCALE)
+            img_SR = (img_SR / 65535).astype(np.float32) # restore it to 0 and 1
+
             if self.need_LR:
-                img_LR = Image.open(self.lr_path[index]).convert("RGB")
+                img_LR = cv2.imread(self.lr_path[index], cv2.IMREAD_ANYDEPTH | cv2.IMREAD_GRAYSCALE)
+                img_LR = (img_LR / 65535).astype(np.float32) # restore it to 0 and 1
+
+            # img_HR = Image.open(self.hr_path[index]).convert("RGB") # open the image and convert to RGB
+            # img_SR = Image.open(self.sr_path[index]).convert("RGB") # open the image and convert to RGB
+            # if self.need_LR:
+            #     img_LR = Image.open(self.lr_path[index]).convert("RGB")
         if self.need_LR: # if need_LR is true
             [img_LR, img_SR, img_HR] = Util.transform_augment(
                 [img_LR, img_SR, img_HR], split=self.split, min_max=(-1, 1)) # call a transform_augment function

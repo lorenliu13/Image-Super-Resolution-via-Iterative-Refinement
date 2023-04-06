@@ -56,9 +56,13 @@ class Swish(nn.Module):
 
 
 class Upsample(nn.Module):
+    """
+    Upsample layer
+
+    """
     def __init__(self, dim):
         super().__init__()
-        self.up = nn.Upsample(scale_factor=2, mode="nearest")
+        self.up = nn.Upsample(scale_factor=2, mode="nearest") # use nearest to do upsampling
         self.conv = nn.Conv2d(dim, dim, 3, padding=1)
 
     def forward(self, x):
@@ -66,6 +70,10 @@ class Upsample(nn.Module):
 
 
 class Downsample(nn.Module):
+    """
+    Downsample layer
+
+    """
     def __init__(self, dim):
         super().__init__()
         self.conv = nn.Conv2d(dim, dim, 3, 2, 1)
@@ -111,6 +119,9 @@ class ResnetBlock(nn.Module):
 
 
 class SelfAttention(nn.Module):
+    """
+    A self-attention layer to process the feature maps and compute attention weights between different spatial positions
+    """
     def __init__(self, in_channel, n_head=1, norm_groups=32):
         super().__init__()
 
@@ -143,13 +154,25 @@ class SelfAttention(nn.Module):
 
 
 class ResnetBlocWithAttn(nn.Module):
+    """
+    ResNet block with optional attention
+    """
     def __init__(self, dim, dim_out, *, noise_level_emb_dim=None, norm_groups=32, dropout=0, with_attn=False):
+        """
+        Initialize the class and accepts several parameters
+        dim: the number of input channels
+        dim_out: the number of output channels
+        noise_level_emb_dim: the dimension of noise level embedding
+        norm_groups: the number of groups for group normalization
+        dropout: the dropout rate
+        with_attn: whether or not to include a self-attention layer
+        """
         super().__init__()
         self.with_attn = with_attn
         self.res_block = ResnetBlock(
             dim, dim_out, noise_level_emb_dim, norm_groups=norm_groups, dropout=dropout)
         if with_attn:
-            self.attn = SelfAttention(dim_out, norm_groups=norm_groups)
+            self.attn = SelfAttention(dim_out, norm_groups=norm_groups) # append a SelfAttention layer
 
     def forward(self, x, time_emb):
         x = self.res_block(x, time_emb)
@@ -159,6 +182,9 @@ class ResnetBlocWithAttn(nn.Module):
 
 
 class UNet(nn.Module):
+    """
+    Defines a U-Net architecture
+    """
     def __init__(
         self,
         in_channel=6,
@@ -172,59 +198,76 @@ class UNet(nn.Module):
         with_noise_level_emb=True,
         image_size=128
     ):
+        """
+        Initialize U-Net with various arguments
+        in_channels:
+        out_channels:
+        norm_groups:
+        channel_mults:
+        attn_res: attention resolution
+        res_block: number of "ResnetBlocWithAttn" layers
+        dropout:
+        with_noise_level_emb:
+        image_size:
+        """
+
         super().__init__()
 
-        if with_noise_level_emb:
+        if with_noise_level_emb: # if include a noise level multiple layer perceptron
             noise_level_channel = inner_channel
             self.noise_level_mlp = nn.Sequential(
                 PositionalEncoding(inner_channel),
                 nn.Linear(inner_channel, inner_channel * 4),
                 Swish(),
                 nn.Linear(inner_channel * 4, inner_channel)
-            )
+            ) # a PositionalEncoding layer + linear layer + swish activation + linear layer
         else:
             noise_level_channel = None
             self.noise_level_mlp = None
 
+        # start to create the downsampling part
         num_mults = len(channel_mults)
-        pre_channel = inner_channel
+        pre_channel = inner_channel # the first channel number
         feat_channels = [pre_channel]
-        now_res = image_size
+        now_res = image_size # current spatial resolution of the feature maps
         downs = [nn.Conv2d(in_channel, inner_channel,
-                           kernel_size=3, padding=1)]
-        for ind in range(num_mults):
-            is_last = (ind == num_mults - 1)
-            use_attn = (now_res in attn_res)
-            channel_mult = inner_channel * channel_mults[ind]
-            for _ in range(0, res_blocks):
+                           kernel_size=3, padding=1)] # the first layer, input is input dimension, output is the first channel number
+        for ind in range(num_mults): # for each number in the channel multipliers
+            is_last = (ind == num_mults - 1) # check if it is the last multiplier
+            use_attn = (now_res in attn_res) # if the current resolution is in the attention resolution list
+            channel_mult = inner_channel * channel_mults[ind] # get the target channel number
+            for _ in range(0, res_blocks): # repeat "res_blocks" times
+                # append a ResnetBlocWithAttn layer
                 downs.append(ResnetBlocWithAttn(
                     pre_channel, channel_mult, noise_level_emb_dim=noise_level_channel, norm_groups=norm_groups, dropout=dropout, with_attn=use_attn))
-                feat_channels.append(channel_mult)
-                pre_channel = channel_mult
-            if not is_last:
+                feat_channels.append(channel_mult) # append the channel number to feat_channels
+                pre_channel = channel_mult # update the pre_channel to current channel size
+            if not is_last: # if it is not the last multiplier, reduce the spatial dimension by a factor of 2
                 downs.append(Downsample(pre_channel))
                 feat_channels.append(pre_channel)
                 now_res = now_res//2
-        self.downs = nn.ModuleList(downs)
+        self.downs = nn.ModuleList(downs) # add the downsampling layers to ModuleList
 
+        # middle parts of the U-Net
         self.mid = nn.ModuleList([
             ResnetBlocWithAttn(pre_channel, pre_channel, noise_level_emb_dim=noise_level_channel, norm_groups=norm_groups,
-                               dropout=dropout, with_attn=True),
+                               dropout=dropout, with_attn=True), # use the attention mechanism
             ResnetBlocWithAttn(pre_channel, pre_channel, noise_level_emb_dim=noise_level_channel, norm_groups=norm_groups,
-                               dropout=dropout, with_attn=False)
+                               dropout=dropout, with_attn=False) # not use the attention mechanism
         ])
 
         ups = []
-        for ind in reversed(range(num_mults)):
-            is_last = (ind < 1)
-            use_attn = (now_res in attn_res)
-            channel_mult = inner_channel * channel_mults[ind]
-            for _ in range(0, res_blocks+1):
+        for ind in reversed(range(num_mults)): # reverse the multiplier
+            is_last = (ind < 1) # if the current iteration is less than 1
+            use_attn = (now_res in attn_res) # check if the current spatial resolution is in the attn_res list
+            # to decide whether to use the attention mechanism
+            channel_mult = inner_channel * channel_mults[ind] # calculate the number of output channels
+            for _ in range(0, res_blocks+1): # add "res_blocks+1" number of ResnetBlockWithAttn layers
                 ups.append(ResnetBlocWithAttn(
                     pre_channel+feat_channels.pop(), channel_mult, noise_level_emb_dim=noise_level_channel, norm_groups=norm_groups,
                         dropout=dropout, with_attn=use_attn))
                 pre_channel = channel_mult
-            if not is_last:
+            if not is_last: # if it is not the last one, add an upsample layer
                 ups.append(Upsample(pre_channel))
                 now_res = now_res*2
 
