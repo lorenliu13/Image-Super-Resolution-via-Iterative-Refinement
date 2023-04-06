@@ -6,7 +6,7 @@ import numpy as np
 
 IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG',
                   '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP']
-
+NPY_EXTENSIONS = ['.npy']
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
@@ -21,6 +21,30 @@ def get_paths_from_images(path):
     for dirpath, _, fnames in sorted(os.walk(path)):
         for fname in sorted(fnames):
             if is_image_file(fname):
+                img_path = os.path.join(dirpath, fname)
+                images.append(img_path)
+    assert images, '{:s} has no valid image file'.format(path)
+    return sorted(images)
+
+
+def is_numpy_file(filename):
+    """
+    04/05/2023
+    Return whether the file extension is .npy
+    """
+    return any(filename.endswith(extension) for extension in NPY_EXTENSIONS)
+
+
+def get_paths_from_numpys(path):
+    """
+    04/05/2023
+    Get path from npy files
+    """
+    assert os.path.isdir(path), '{:s} is not a valid directory'.format(path)
+    images = []
+    for dirpath, _, fnames in sorted(os.walk(path)):
+        for fname in sorted(fnames):
+            if is_numpy_file(fname):
                 img_path = os.path.join(dirpath, fname)
                 images.append(img_path)
     assert images, '{:s} has no valid image file'.format(path)
