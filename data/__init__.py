@@ -33,6 +33,7 @@ def create_dataset(dataset_opt, phase):
     '''create dataset'''
     mode = dataset_opt['mode']
     # from data.LRHR_dataset import LRHRDataset as D
+    # from data.ERA5_LRHR_dataset import ERA5_LRHRDataset as D
     from data.ERA5_LRHR_npy_dataset import ERA5_LRHRDataset as D # import dataset support ERA5
     # call data.LRHR_dataset
     dataset = D(dataroot=dataset_opt['dataroot'],

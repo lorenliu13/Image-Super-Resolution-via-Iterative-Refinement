@@ -13,7 +13,7 @@ import numpy as np
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # config: set up a JSON file for configuration, two alternative names "-c" and "--config"
-    parser.add_argument('-c', '--config', type=str, default='config/sr_sr3_16_128_test.json',
+    parser.add_argument('-c', '--config', type=str, default='config/sr_sr3_16_128.json',
                         help='JSON file for configuration')
     # phase: whether the script should be run in training or validation (val) mode
     parser.add_argument('-p', '--phase', type=str, choices=['train', 'val'],

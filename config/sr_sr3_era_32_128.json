@@ -5,10 +5,10 @@
         0
     ],
     "path": { //set the path
-        "log": "J:\\Mississippi_design_storm\\Super_resolution\\SR_diffusion\\results\\era_32_128\\logs",
-        "tb_logger": "J:\\Mississippi_design_storm\\Super_resolution\\SR_diffusion\\results\\era_32_128\\tb_logger", //
-        "results": "J:\\Mississippi_design_storm\\Super_resolution\\SR_diffusion\\results\\era_32_128\\results", // where the model will save the results
-        "checkpoint": "J:\\Mississippi_design_storm\\Super_resolution\\SR_diffusion\\results\\era_32_128\\checkpoint", // where model saves the check point
+        "log": "logs",
+        "tb_logger": "tb_logger", //
+        "results": "results", // where the model will save the results
+        "checkpoint": "checkpoint", // where model saves the check point
         "resume_state": null
         // Set up pre-trained model
         // "resume_state": "J:/Mississippi_design_storm/Super_resolution/SR_diffusion/pre_train_model/16_128_ffhq_celebahq/16_128_ffhq_celebahq" //pretrain model or training state
@@ -17,12 +17,11 @@
         "train": {
             "name": "era_32_128",
             "mode": "HR", // whether need LR img
-            // "dataroot": "J:\\Mississippi_design_storm\\Super_resolution\\SR_diffusion\\datasets\\div2k_16_128_0403_16_128",
-            "dataroot": "J:\\Mississippi_design_storm\\Super_resolution\\SR_diffusion\\datasets\\era5_32_128_train",
+            "dataroot": "era5_32_128_train",
             "datatype": "img", //lmdb or img, path of img files
             "l_resolution": 32, // low resolution need to super_resolution
             "r_resolution": 128, // high resolution
-            "batch_size": 64, // set batch size as 4, number of samples to be processed at the same time
+            "batch_size": 1, // set batch size as 4, number of samples to be processed at the same time
             "num_workers": 8, // set how many workers for data loading
             "use_shuffle": true, // whether the dataset should be randomly shuffled before being processed
             "data_len": -1 // -1 represents all data used in train
@@ -30,8 +29,7 @@
         "val": {
             "name": "era_32_128",
             "mode": "LRHR",
-            // "dataroot": "J:\\Mississippi_design_storm\\Super_resolution\\SR_diffusion\\datasets\\div2k_16_128_0403_16_128",
-            "dataroot": "J:\\Mississippi_design_storm\\Super_resolution\\SR_diffusion\\datasets\\era5_32_128_test",
+            "dataroot": "era5_32_128_test",
             "datatype": "img", //lmdb or img, path of img files
             "l_resolution": 32,
             "r_resolution": 128,
