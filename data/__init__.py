@@ -32,9 +32,15 @@ def create_dataloader(dataset, dataset_opt, phase):
 def create_dataset(dataset_opt, phase):
     '''create dataset'''
     mode = dataset_opt['mode']
+    datatype = dataset_opt['datatype']
+    if datatype == 'npy': # if dataset is numpy array, use this
+        from data.ERA5_LRHR_npy_dataset import ERA5_LRHRDataset as D  # import dataset support ERA5
+    else:
+        # otherwise use default function
+        from data.LRHR_dataset import LRHRDataset as D
     # from data.LRHR_dataset import LRHRDataset as D
     # from data.ERA5_LRHR_dataset import ERA5_LRHRDataset as D
-    from data.ERA5_LRHR_npy_dataset import ERA5_LRHRDataset as D # import dataset support ERA5
+
     # call data.LRHR_dataset
     dataset = D(dataroot=dataset_opt['dataroot'],
                 datatype=dataset_opt['datatype'],
