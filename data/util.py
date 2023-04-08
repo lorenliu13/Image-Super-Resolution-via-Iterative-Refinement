@@ -37,7 +37,7 @@ def is_numpy_file(filename):
 
 def get_paths_from_numpys(path):
     """
-    04/05/2023
+    04/05/2023 verified
     Get path from npy files
     """
     assert os.path.isdir(path), '{:s} is not a valid directory'.format(path)
