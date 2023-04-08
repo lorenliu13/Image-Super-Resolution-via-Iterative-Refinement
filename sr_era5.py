@@ -144,8 +144,8 @@ if __name__ == "__main__":
                             fake_img, '{}/{}_{}_inf.npy'.format(result_path, current_step, idx))
                         tb_logger.add_image(
                             'Iter_{}'.format(current_step),
-                            np.transpose(np.concatenate(
-                                (fake_img, sr_img, hr_img), axis=1), [2, 0, 1]),
+                            np.concatenate(
+                                (fake_img, sr_img, hr_img), axis=1), [2, 0, 1],
                             idx)
                         avg_psnr += Metrics.calculate_psnr(
                             sr_img, hr_img)
