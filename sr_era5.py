@@ -128,10 +128,10 @@ if __name__ == "__main__":
                         diffusion.test(continous=False)
                         visuals = diffusion.get_current_visuals()
                         # convert the tensor to numpy array
-                        sr_img = Metrics.tensor2numpy(visuals['SR'])
-                        hr_img = Metrics.tensor2numpy(visuals['HR'])
-                        lr_img = Metrics.tensor2numpy(visuals['LR'])
-                        fake_img = Metrics.tensor2numpy(visuals['INF'])
+                        sr_img = Metrics.tensor2numpy(visuals['SR']) # (128, 128) between 0 and 1
+                        hr_img = Metrics.tensor2numpy(visuals['HR']) # (128, 128)
+                        lr_img = Metrics.tensor2numpy(visuals['LR']) # (128, 128)
+                        fake_img = Metrics.tensor2numpy(visuals['INF']) # (128, 128)
 
                         # generation
                         Metrics.save_numpy(
@@ -142,19 +142,27 @@ if __name__ == "__main__":
                             lr_img, '{}/{}_{}_lr.npy'.format(result_path, current_step, idx))
                         Metrics.save_numpy(
                             fake_img, '{}/{}_{}_inf.npy'.format(result_path, current_step, idx))
+
+                        # expand one dimension to (1, 128, 128)
+                        fake_img_expanded = fake_img[np.newaxis, :, :]
+                        sr_img_expanded = sr_img[np.newaxis, :, :]
+                        hr_img_expanded = hr_img[np.newaxis, :, :]
+
                         tb_logger.add_image(
                             'Iter_{}'.format(current_step),
                             np.concatenate(
-                                (fake_img, sr_img, hr_img), axis=1), [2, 0, 1],
+                                (fake_img_expanded, sr_img_expanded, hr_img_expanded), axis=2),
                             idx)
-                        avg_psnr += Metrics.calculate_psnr(
-                            sr_img, hr_img)
+                            # concatenate to be (1, 128, 384)
+
+                        avg_psnr += Metrics.calculate_psnr_npy(
+                            sr_img, hr_img) # calculate psnr, given that image range from 0 to 1
 
                         if wandb_logger:
                             wandb_logger.log_image(
                                 f'validation_{idx}', 
-                                np.concatenate((fake_img, sr_img, hr_img), axis=1)
-                            )
+                                np.concatenate((fake_img_expanded, sr_img_expanded, hr_img_expanded), axis=2)
+                            ) # concatenate to be (1, 128, 384)
 
                     avg_psnr = avg_psnr / idx
                     diffusion.set_new_noise_schedule(
@@ -200,9 +208,9 @@ if __name__ == "__main__":
             diffusion.test(continous=True) # runs the model in test mode, generating super-resolution images from LR images
             visuals = diffusion.get_current_visuals() # retrieves the current visuals, including LR, HR, and generated imgs
 
-            hr_img = Metrics.tensor2img(visuals['HR'])  # uint8
-            lr_img = Metrics.tensor2img(visuals['LR'])  # uint8
-            fake_img = Metrics.tensor2img(visuals['INF'])  # uint8
+            hr_img = Metrics.tensor2numpy(visuals['HR'])  # uint8
+            lr_img = Metrics.tensor2numpy(visuals['LR'])  # uint8
+            fake_img = Metrics.tensor2numpy(visuals['INF'])  # uint8
 
             sr_img_mode = 'grid'
             if sr_img_mode == 'single':
@@ -210,34 +218,36 @@ if __name__ == "__main__":
                 sr_img = visuals['SR']  # uint8
                 sample_num = sr_img.shape[0]
                 for iter in range(0, sample_num):
-                    Metrics.save_img(
-                        Metrics.tensor2img(sr_img[iter]), '{}/{}_{}_sr_{}.png'.format(result_path, current_step, idx, iter))
+                    Metrics.save_numpy(
+                        Metrics.tensor2numpy(sr_img[iter]), '{}/{}_{}_sr_{}.npy'.format(result_path, current_step, idx, iter))
             else:
                 # grid img
-                sr_img = Metrics.tensor2img(visuals['SR'])  # uint8
-                Metrics.save_img(
-                    sr_img, '{}/{}_{}_sr_process.png'.format(result_path, current_step, idx))
-                Metrics.save_img(
-                    Metrics.tensor2img(visuals['SR'][-1]), '{}/{}_{}_sr.png'.format(result_path, current_step, idx))
+                sr_img = Metrics.tensor2numpy(visuals['SR'])  # uint8
+                Metrics.save_numpy(
+                    sr_img, '{}/{}_{}_sr_process.npy'.format(result_path, current_step, idx))
+                Metrics.save_numpy(
+                    Metrics.tensor2numpy(visuals['SR'][-1]), '{}/{}_{}_sr.npy'.format(result_path, current_step, idx))
 
             # save imgs
-            Metrics.save_img(
-                hr_img, '{}/{}_{}_hr.png'.format(result_path, current_step, idx))
-            Metrics.save_img(
-                lr_img, '{}/{}_{}_lr.png'.format(result_path, current_step, idx))
-            Metrics.save_img(
-                fake_img, '{}/{}_{}_inf.png'.format(result_path, current_step, idx))
+            Metrics.save_numpy(
+                hr_img, '{}/{}_{}_hr.npy'.format(result_path, current_step, idx))
+            Metrics.save_numpy(
+                lr_img, '{}/{}_{}_lr.npy'.format(result_path, current_step, idx))
+            Metrics.save_numpy(
+                fake_img, '{}/{}_{}_inf.npy'.format(result_path, current_step, idx))
 
             # generation
             # calculates PNSR and SSIM between HR and generated super-resolution imgs
-            eval_psnr = Metrics.calculate_psnr(Metrics.tensor2img(visuals['SR'][-1]), hr_img)
-            eval_ssim = Metrics.calculate_ssim(Metrics.tensor2img(visuals['SR'][-1]), hr_img)
+            eval_psnr = Metrics.calculate_psnr_npy(Metrics.tensor2numpy(visuals['SR'][-1]), hr_img)
+
+            # convert the image from [0,1] to [0, 255] before calculate the ssim
+            eval_ssim = Metrics.calculate_ssim((Metrics.tensor2numpy(visuals['SR'][-1]) * 255).astype(np.uint8), (hr_img * 255).astype(np.uint8))
 
             avg_psnr += eval_psnr
             avg_ssim += eval_ssim
 
             if wandb_logger and opt['log_eval']:
-                wandb_logger.log_eval_data(fake_img, Metrics.tensor2img(visuals['SR'][-1]), hr_img, eval_psnr, eval_ssim)
+                wandb_logger.log_eval_data(fake_img, Metrics.tensor2numpy(visuals['SR'][-1]), hr_img, eval_psnr, eval_ssim)
 
         avg_psnr = avg_psnr / idx
         avg_ssim = avg_ssim / idx

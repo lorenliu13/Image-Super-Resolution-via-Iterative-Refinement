@@ -134,18 +134,21 @@ if __name__ == "__main__":
 
                         # generation
                         Metrics.save_img(
-                            hr_img, '{}/{}_{}_hr.png'.format(result_path, current_step, idx))
+                            hr_img, '{}/{}_{}_hr.png'.format(result_path, current_step, idx)) # (128, 128, 3)
                         Metrics.save_img(
-                            sr_img, '{}/{}_{}_sr.png'.format(result_path, current_step, idx))
+                            sr_img, '{}/{}_{}_sr.png'.format(result_path, current_step, idx)) # (128, 128, 3)
                         Metrics.save_img(
-                            lr_img, '{}/{}_{}_lr.png'.format(result_path, current_step, idx))
+                            lr_img, '{}/{}_{}_lr.png'.format(result_path, current_step, idx)) # (128, 128, 3)
                         Metrics.save_img(
-                            fake_img, '{}/{}_{}_inf.png'.format(result_path, current_step, idx))
+                            fake_img, '{}/{}_{}_inf.png'.format(result_path, current_step, idx)) # (128, 128, 3)
                         tb_logger.add_image(
                             'Iter_{}'.format(current_step),
                             np.transpose(np.concatenate(
                                 (fake_img, sr_img, hr_img), axis=1), [2, 0, 1]),
                             idx)
+                            # concatenate the images along the second axis (horizontally concatenated) (128, 128 + 128 + 128, 3)
+                            # transpose is used to let the image to match the required dim (channel, height, width) (3, 128, 384)
+
                         avg_psnr += Metrics.calculate_psnr(
                             sr_img, hr_img)
 
