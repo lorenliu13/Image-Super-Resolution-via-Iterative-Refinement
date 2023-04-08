@@ -44,7 +44,7 @@
             "out_channel": 1,
             "inner_channel": 64,
             "channel_multiplier": [
-                1,
+                1
             ],
             "attn_res": [
                 16
@@ -74,7 +74,7 @@
     },
     "train": {
         "n_iter": 10000, // one million steps
-        "val_freq": 100,
+        "val_freq": 1000,
         "save_checkpoint_freq": 1e4,
         "print_freq": 200,
         "optimizer": {
