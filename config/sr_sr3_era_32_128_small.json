@@ -18,7 +18,7 @@
             "name": "era_32_128",
             "mode": "HR", // whether need LR img
             "dataroot": "era5_32_128_train",
-            "datatype": "img", //lmdb or img, path of img files
+            "datatype": "npy", //lmdb or img, path of img files
             "l_resolution": 32, // low resolution need to super_resolution
             "r_resolution": 128, // high resolution
             "batch_size": 1, // set batch size as 4, number of samples to be processed at the same time
@@ -30,7 +30,7 @@
             "name": "era_32_128",
             "mode": "LRHR",
             "dataroot": "era5_32_128_test",
-            "datatype": "img", //lmdb or img or npy, path of img files
+            "datatype": "npy", //lmdb or img or npy, path of img files
             "l_resolution": 32,
             "r_resolution": 128,
             "data_len": 10 // data length in validation
