@@ -44,11 +44,7 @@
             "out_channel": 1,
             "inner_channel": 64,
             "channel_multiplier": [
-                1,
-//                2,
-//                4,
-//                8,
-//                8
+                1
             ],
             "attn_res": [
                 16
