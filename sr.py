@@ -215,7 +215,7 @@ if __name__ == "__main__":
                     Metrics.save_img(
                         Metrics.tensor2img(sr_img[iter]), '{}/{}_{}_sr_{}.png'.format(result_path, current_step, idx, iter))
             else:
-                # grid img
+                # grid img (with noise adding process)
                 sr_img = Metrics.tensor2img(visuals['SR'])  # uint8
                 Metrics.save_img(
                     sr_img, '{}/{}_{}_sr_process.png'.format(result_path, current_step, idx))

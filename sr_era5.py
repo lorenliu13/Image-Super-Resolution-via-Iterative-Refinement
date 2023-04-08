@@ -70,6 +70,8 @@ if __name__ == "__main__":
             val_set = Data.create_dataset(dataset_opt, phase) # create a dataset object
             val_loader = Data.create_dataloader( # create a data loader object
                 val_set, dataset_opt, phase)
+    # it will create two datasets, train and validation
+
     logger.info('Initial Dataset Finished') # logs an informational message
 
     # model
