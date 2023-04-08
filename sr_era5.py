@@ -123,7 +123,7 @@ if __name__ == "__main__":
                     diffusion.set_new_noise_schedule(
                         opt['model']['beta_schedule']['val'], schedule_phase='val')
 
-                    # for each image in the validation set
+                    # for image in the validation set
                     for _,  val_data in enumerate(val_loader):
                         idx += 1
                         diffusion.feed_data(val_data)
