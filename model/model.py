@@ -24,6 +24,7 @@ class DDPM(BaseModel): # inherits from "Basemodel"
         self.set_new_noise_schedule(
             opt['model']['beta_schedule']['train'], schedule_phase='train') # sets the noise schedule
         if self.opt['phase'] == 'train':
+            # sets the generator network to training mode
             self.netG.train()
             # find the parameters to optimize
             if opt['model']['finetune_norm']:
@@ -39,11 +40,12 @@ class DDPM(BaseModel): # inherits from "Basemodel"
             else:
                 optim_params = list(self.netG.parameters())
 
+            # initialize an Adam optimizer with learning rate
             self.optG = torch.optim.Adam(
                 optim_params, lr=opt['train']["optimizer"]["lr"])
             self.log_dict = OrderedDict()
-        self.load_network()
-        self.print_network()
+        self.load_network() # load the model from a checkpoint
+        self.print_network() # print the structure of the network
 
     def feed_data(self, data):
         self.data = self.set_device(data)
