@@ -13,7 +13,7 @@ import numpy as np
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # config: set up a JSON file for configuration, two alternative names "-c" and "--config"
-    parser.add_argument('-c', '--config', type=str, default='config/sr_sr3_era_32_128_local_test.json',
+    parser.add_argument('-c', '--config', type=str, default='config/javis_config/sr_sr3_era_32_128_small_01.json',
                         help='JSON file for configuration')
     # phase: whether the script should be run in training or validation (val) mode
     parser.add_argument('-p', '--phase', type=str, choices=['train', 'val'],
@@ -126,7 +126,7 @@ if __name__ == "__main__":
                         opt['model']['beta_schedule']['val'], schedule_phase='val')
 
                     # for image in the validation set
-                    for _,  val_data in enumerate(val_loader):
+                    for _,  val_data in enumerate(val_loader): # during the training stage, the validation imgs is only 3
                         idx += 1
                         diffusion.feed_data(val_data)
                         diffusion.test(continous=False)

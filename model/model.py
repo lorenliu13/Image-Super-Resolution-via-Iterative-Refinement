@@ -16,13 +16,13 @@ class DDPM(BaseModel): # inherits from "Basemodel"
     def __init__(self, opt):
         super(DDPM, self).__init__(opt)
         # define network and load pretrained models
-        self.netG = self.set_device(networks.define_G(opt))
+        self.netG = self.set_device(networks.define_G(opt)) # defines the generator netwrok
         self.schedule_phase = None
 
         # set loss and load resume state
         self.set_loss()
         self.set_new_noise_schedule(
-            opt['model']['beta_schedule']['train'], schedule_phase='train')
+            opt['model']['beta_schedule']['train'], schedule_phase='train') # sets the noise schedule
         if self.opt['phase'] == 'train':
             self.netG.train()
             # find the parameters to optimize
