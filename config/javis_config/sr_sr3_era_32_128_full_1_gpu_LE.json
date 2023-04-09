@@ -19,9 +19,9 @@
             "mode": "HR", // whether need LR img
             "dataroot": "era5_32_128_train", // Using the absolute path
             "datatype": "npy", //lmdb or img, path of img files
-            "l_resolution": 16, // low resolution need to super_resolution
+            "l_resolution": 32, // low resolution need to super_resolution
             "r_resolution": 128, // high resolution
-            "batch_size": 32, // set batch size as 64, number of samples to be processed at the same time
+            "batch_size": 16, // set batch size as 64, number of samples to be processed at the same time
             "num_workers": 8, // set how many workers for data loading
             "use_shuffle": true, // whether the dataset should be randomly shuffled before being processed
             "data_len": -1 // -1 represents all data used in train
