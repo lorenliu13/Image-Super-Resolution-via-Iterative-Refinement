@@ -80,7 +80,7 @@
         "n_iter": 500000, // one million steps
         "val_freq": 5e4, // every 50000 steps do a validation
         "save_checkpoint_freq": 5e4, // every 50,000 steps save a model
-        "print_freq": 1000, // between 1e-3 and 1e-4
+        "print_freq": 200, // between 1e-3 and 1e-4
         "optimizer": {
             "type": "adam",
             "lr": 1e-3
