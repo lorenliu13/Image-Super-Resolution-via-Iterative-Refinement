@@ -9,9 +9,9 @@
         "tb_logger": "tb_logger", //
         "results": "results", // where the model will save the results
         "checkpoint": "checkpoint", // where model saves the check point
-        // "resume_state": null
+        "resume_state": null
         // Set up pre-trained model
-        "resume_state": "experiments/sr_era_32_128_230409" //pretrain model or training state
+        // "resume_state": "experiments/sr_era_32_128_230409" //pretrain model or training state
     },
     "datasets": {
         "train": {
