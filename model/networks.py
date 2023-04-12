@@ -81,13 +81,19 @@ def init_weights(net, init_type='kaiming', scale=1, std=0.02):
 
 # Generator
 def define_G(opt):
-    model_opt = opt['model']
+    """
+    Define and initialize the generator network "netG." Sets up the U-Net architecture and the Diffusion model
+    """
+
+    model_opt = opt['model'] # check the model type "ddpm" or "sr3"
     if model_opt['which_model_G'] == 'ddpm':
         from .ddpm_modules import diffusion, unet
     elif model_opt['which_model_G'] == 'sr3':
         from .sr3_modules import diffusion, unet
+    # if "norm_groups" is not set, assign a default value of 32
     if ('norm_groups' not in model_opt['unet']) or model_opt['unet']['norm_groups'] is None:
         model_opt['unet']['norm_groups']=32
+    # Create the U-Net model
     model = unet.UNet( # call the UNet function
         in_channel=model_opt['unet']['in_channel'], # set up input channel number
         out_channel=model_opt['unet']['out_channel'], # set up output channel number
@@ -99,6 +105,7 @@ def define_G(opt):
         dropout=model_opt['unet']['dropout'],
         image_size=model_opt['diffusion']['image_size']
     )
+    # Craate the Gaussian Diffusion model
     netG = diffusion.GaussianDiffusion(
         model,
         image_size=model_opt['diffusion']['image_size'],
@@ -107,10 +114,12 @@ def define_G(opt):
         conditional=model_opt['diffusion']['conditional'],
         schedule_opt=model_opt['beta_schedule']['train']
     )
-    if opt['phase'] == 'train': # if the phrase is train, weights of the model are initalized
+    # variables: denoise_fn = model, image_size, channels=3, loss_type='l1', conditional=True, schedule_opt=None
+
+    if opt['phase'] == 'train': # if the phrase is train, weights of the model are initialized
         # init_weights(netG, init_type='kaiming', scale=0.1)
         init_weights(netG, init_type='orthogonal')
-    if opt['gpu_ids'] and opt['distributed']:
+    if opt['gpu_ids'] and opt['distributed']: # if model is trained using GPUs and is distributed
         assert torch.cuda.is_available()
         netG = nn.DataParallel(netG) # enable parallel training across multiple GPUs
     return netG

@@ -27,16 +27,25 @@ class BaseModel():
         pass
 
     def set_device(self, x):
+        """
+        Function that moves the input data to specified device (GPU or CPU)
+        x: can be dictionary, list, or single tensor
+        """
         if isinstance(x, dict):
+            # if x is a dictionary
             for key, item in x.items():
+                # iterate through the dictionary's key-value pairs
                 if item is not None:
-                    x[key] = item.to(self.device)
+                    # if the item is not none, move it to the target device
+                    x[key] = item.to(self.device) # move it to the target device
         elif isinstance(x, list):
+            # if it is a list
             for item in x:
+                # iterate through the list
                 if item is not None:
-                    item = item.to(self.device)
+                    item = item.to(self.device) # move it to the target device
         else:
-            x = x.to(self.device)
+            x = x.to(self.device) # if it is a tensor, move to the target device
         return x
 
     def get_network_description(self, network):

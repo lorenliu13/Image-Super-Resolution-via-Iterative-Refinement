@@ -48,38 +48,56 @@ class DDPM(BaseModel): # inherits from "Basemodel"
         self.print_network() # print the structure of the network
 
     def feed_data(self, data):
+        """
+        Feed the image data to the model
+        """
         self.data = self.set_device(data)
 
     def optimize_parameters(self):
-        self.optG.zero_grad()
+        self.optG.zero_grad() # set the gradients of the generator's optimizer to zero
+        # compute the loss value by passing the input data through the generator network (netG)
+        # loss represents the difference between the predicted output and the ground truth
         l_pix = self.netG(self.data)
         # need to average in multi-gpu
-        b, c, h, w = self.data['HR'].shape
+        b, c, h, w = self.data['HR'].shape # extract the dimensions of input data (batch, channel, height, width)
+        # compute the average loss value
         l_pix = l_pix.sum()/int(b*c*h*w)
+        # perform backpropagation, calculates the gradients of loss with respect to the generator's parameters
         l_pix.backward()
+        # update the generator network's parameters using the calculated gradients
         self.optG.step()
 
         # set log
+        # stores the computed loss value in the log_dict
         self.log_dict['l_pix'] = l_pix.item()
 
     def test(self, continous=False):
-        self.netG.eval()
+        """
+        Perform a single inference step with the diffusion model to generate SR images.
+        continous: whether to return multiple images showing the sampling processes
+        """
+
+        self.netG.eval() # set the diffusion model to evaluation mode
         with torch.no_grad():
-            if isinstance(self.netG, nn.DataParallel):
+            if isinstance(self.netG, nn.DataParallel): # if has multiple GPUs
                 self.SR = self.netG.module.super_resolution(
-                    self.data['SR'], continous)
+                    self.data['SR'], continous) # call super-resolution function, with the low-resolution but interpolated image in data['SR']
             else:
                 self.SR = self.netG.super_resolution(
                     self.data['SR'], continous)
-        self.netG.train()
+        self.netG.train() # set the diffusion model back to train mode
 
     def sample(self, batch_size=1, continous=False):
-        self.netG.eval()
+        """
+        Used to generate random images from the diffusion model.
+        """
+
+        self.netG.eval() # set the diffusion model to evaluation mode
         with torch.no_grad():
             if isinstance(self.netG, nn.DataParallel):
                 self.SR = self.netG.module.sample(batch_size, continous)
             else:
-                self.SR = self.netG.sample(batch_size, continous)
+                self.SR = self.netG.sample(batch_size, continous) # generate samples with batch_size
         self.netG.train()
 
     def set_loss(self):
@@ -89,22 +107,33 @@ class DDPM(BaseModel): # inherits from "Basemodel"
             self.netG.set_loss(self.device)
 
     def set_new_noise_schedule(self, schedule_opt, schedule_phase='train'):
+        """
+        Set a new noise schedule for the Diffusion model
+        schedule_opt: a dictionary containing the options for the noise schedule
+        schedule_phase: whether it is train or val
+        """
         if self.schedule_phase is None or self.schedule_phase != schedule_phase:
             self.schedule_phase = schedule_phase
+            # update the schedule phase to provided phase
             if isinstance(self.netG, nn.DataParallel):
                 self.netG.module.set_new_noise_schedule(
                     schedule_opt, self.device)
             else:
                 self.netG.set_new_noise_schedule(schedule_opt, self.device)
+            # call the "set_new_noise_schedule" method of the generator network
 
     def get_current_log(self):
         return self.log_dict
 
     def get_current_visuals(self, need_LR=True, sample=False):
+        """
+        Collect and prepare the relevant images generated during the testing process.
+        Returns an ordered dictionary with keys and image tensors.
+        """
         out_dict = OrderedDict()
-        if sample:
-            out_dict['SAM'] = self.SR.detach().float().cpu()
-        else:
+        if sample: # if the sample flag is true, add the sample images
+            out_dict['SAM'] = self.SR.detach().float().cpu() # detached from computation graph and move to CPU
+        else: # if sample is false, the function retrieves images related to training/testing process
             out_dict['SR'] = self.SR.detach().float().cpu()
             out_dict['INF'] = self.data['SR'].detach().float().cpu()
             out_dict['HR'] = self.data['HR'].detach().float().cpu()

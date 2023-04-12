@@ -32,20 +32,38 @@ class PositionalEncoding(nn.Module):
 
 
 class FeatureWiseAffine(nn.Module):
+    """
+    A feature-wise affine transformation.
+    """
     def __init__(self, in_channels, out_channels, use_affine_level=False):
+        """
+        use_affine_level: whether to use affine level transformation
+        """
+
         super(FeatureWiseAffine, self).__init__()
         self.use_affine_level = use_affine_level
+        # a linear layer: y = Wx + b
         self.noise_func = nn.Sequential(
             nn.Linear(in_channels, out_channels*(1+self.use_affine_level))
+            # in_channels: the number of input features
+            # out_channels * (1 + self.use_affine_level): the number of output features
+            # if use_affine_level is ture, the output dimension is doubled
         )
 
     def forward(self, x, noise_embed):
-        batch = x.shape[0]
+        batch = x.shape[0] # extract the batch size
+
+        # if use affine level transform
         if self.use_affine_level:
+            # apply noise_function to the noise embedding
+            # reshape the result, splitting it along the channel dimension
             gamma, beta = self.noise_func(noise_embed).view(
                 batch, -1, 1, 1).chunk(2, dim=1)
+            # apply feature wise affine transform
             x = (1 + gamma) * x + beta
         else:
+            # if not use affine level transform
+            # apply noise_func(noise_embed) on x
             x = x + self.noise_func(noise_embed).view(batch, -1, 1, 1)
         return x
 
@@ -83,16 +101,17 @@ class Downsample(nn.Module):
 
 
 # building block modules
-
-
 class Block(nn.Module):
+    """
+    A basic building block. It consists of a normalization layer, activation function, optional drop out, and a conv layer
+    """
     def __init__(self, dim, dim_out, groups=32, dropout=0):
         super().__init__()
         self.block = nn.Sequential(
-            nn.GroupNorm(groups, dim),
-            Swish(),
-            nn.Dropout(dropout) if dropout != 0 else nn.Identity(),
-            nn.Conv2d(dim, dim_out, 3, padding=1)
+            nn.GroupNorm(groups, dim), # a group normalization layer
+            Swish(), # a activation function, f(x) = x * sigmod(x)
+            nn.Dropout(dropout) if dropout != 0 else nn.Identity(), # randomly set a fraction of input to 0
+            nn.Conv2d(dim, dim_out, 3, padding=1) # 2d conv layer with 3*3 kernel pad 1
         )
 
     def forward(self, x):
@@ -100,22 +119,31 @@ class Block(nn.Module):
 
 
 class ResnetBlock(nn.Module):
+    """
+    A resnet block class
+    """
     def __init__(self, dim, dim_out, noise_level_emb_dim=None, dropout=0, use_affine_level=False, norm_groups=32):
-        super().__init__()
+
+        super().__init__() # call "nn.Module"'s constructor
+
+        #
         self.noise_func = FeatureWiseAffine(
             noise_level_emb_dim, dim_out, use_affine_level)
 
+        # add one block
         self.block1 = Block(dim, dim_out, groups=norm_groups)
+        # add another block
         self.block2 = Block(dim_out, dim_out, groups=norm_groups, dropout=dropout)
+        # 1*1 conv layer to match the input and output dimensions
         self.res_conv = nn.Conv2d(
             dim, dim_out, 1) if dim != dim_out else nn.Identity()
 
     def forward(self, x, time_emb):
         b, c, h, w = x.shape
-        h = self.block1(x)
-        h = self.noise_func(h, time_emb)
-        h = self.block2(h)
-        return h + self.res_conv(x)
+        h = self.block1(x) # pass the tensor through block 1
+        h = self.noise_func(h, time_emb) # apply the noise function
+        h = self.block2(h) # pass the tensor through block 2
+        return h + self.res_conv(x) # add the result to input tensor, create a residual connection
 
 
 class SelfAttention(nn.Module):
@@ -127,29 +155,42 @@ class SelfAttention(nn.Module):
 
         self.n_head = n_head
 
+        # a group normalization layer normalizes the input features across specified number of groups
         self.norm = nn.GroupNorm(norm_groups, in_channel)
+        # 1 * 1 convolution, responsible to compute the query, key, and value matrices
         self.qkv = nn.Conv2d(in_channel, in_channel * 3, 1, bias=False)
+        # produce the final output feature maps
         self.out = nn.Conv2d(in_channel, in_channel, 1)
 
     def forward(self, input):
-        batch, channel, height, width = input.shape
+        batch, channel, height, width = input.shape # extract the dimension of input tensor
         n_head = self.n_head
         head_dim = channel // n_head
 
-        norm = self.norm(input)
+        norm = self.norm(input) # normalize the input tensor using the group normalization layer
+        # compute the query, key, value tensors using the 1*1 conv layer.
+        # reshape the result
         qkv = self.qkv(norm).view(batch, n_head, head_dim * 3, height, width)
+        # this qkv layer is initialized with random weights, as the model is trained, these weights are updated
+        # through backpropagation
         query, key, value = qkv.chunk(3, dim=2)  # bhdyx
 
+        # matrix multiplication of the query and key tensors
+        # scaling the result by the square root of the channel size to get the raw attention scores
         attn = torch.einsum(
             "bnchw, bncyx -> bnhwyx", query, key
         ).contiguous() / math.sqrt(channel)
+        # reshape the raw attention scores
         attn = attn.view(batch, n_head, height, width, -1)
+        # apply the softmax function along the last dimension to get attention weights
         attn = torch.softmax(attn, -1)
+        # reshape teh attention weights back to the original dimensions
         attn = attn.view(batch, n_head, height, width, height, width)
-
+        # matrix multiplication of the attention weights and the value tensor
         out = torch.einsum("bnhwyx, bncyx -> bnchw", attn, value).contiguous()
+        # pass the output through 1*1 convolutional layer to get final output map
         out = self.out(out.view(batch, channel, height, width))
-
+        # add the input tensor to the output to create a residual connection
         return out + input
 
 
@@ -276,6 +317,11 @@ class UNet(nn.Module):
         self.final_conv = Block(pre_channel, default(out_channel, in_channel), groups=norm_groups)
 
     def forward(self, x, time):
+        """
+        Forward pass of the U-Net, process the input tensor through downsampling, middle, and upsampling layer
+        x: input tensor
+        time: noise level tensor
+        """
         t = self.noise_level_mlp(time) if exists(
             self.noise_level_mlp) else None
 
