@@ -42,13 +42,17 @@
         "unet": {
             "in_channel": 2,
             "out_channel": 1,
-            "inner_channel": 64,
+            "inner_channel": 16,
+            "norm_groups": 16,
             "channel_multiplier": [
                 1,
                 2,
                 4,
                 8,
                 16,
+                32,
+                32,
+                32
             ],
             "attn_res": [
                 16
