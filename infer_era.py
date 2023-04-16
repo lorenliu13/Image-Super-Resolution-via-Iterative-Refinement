@@ -77,10 +77,12 @@ if __name__ == "__main__":
         if sr_img_mode == 'single':
             # single img series
             sr_img = visuals['SR']  # uint8
-            sample_num = sr_img.shape[0]
-            for iter in range(0, sample_num):
-                Metrics.save_numpy(
-                    Metrics.tensor2numpy(sr_img[iter]), '{}/{}_{}_sr_{}.npy'.format(result_path, current_step, idx, iter))
+            # sample_num = sr_img.shape[0]
+            Metrics.save_numpy(
+                Metrics.tensor2numpy(visuals['SR'][-1]), '{}/{}_{}_sr.npy'.format(result_path, current_step, idx))
+            # for iter in range(0, sample_num):
+            #     Metrics.save_numpy(
+            #         Metrics.tensor2numpy(sr_img[iter]), '{}/{}_{}_sr_{}.npy'.format(result_path, current_step, idx, iter))
         else:
             # grid img
             sr_img = Metrics.tensor2numpy(visuals['SR'])  # uint8
