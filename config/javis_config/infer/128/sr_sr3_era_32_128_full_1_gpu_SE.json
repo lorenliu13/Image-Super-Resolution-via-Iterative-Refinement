@@ -11,7 +11,7 @@
         "checkpoint": "checkpoint", // where model saves the check point
         // "resume_state": null
         // Set up pre-trained model
-        "resume_state": "experiments/sr_era_32_128_230409/I100000_E981" //pretrain model or training state, stops at the model name without extensions
+        "resume_state": "trained_models/32_128/sr_era_32_128_230409/I500000_E4902" //pretrain model or training state, stops at the model name without extensions
     },
     "datasets": {
         "train": {
