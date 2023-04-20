@@ -47,7 +47,7 @@ if __name__ == "__main__":
         if phase == 'val':
             val_set = Data.create_dataset(dataset_opt, phase)
             val_loader = Data.create_dataloader(
-                val_set, dataset_opt, phase)
+                val_set, dataset_opt, phase) # create a data loader
     logger.info('Initial Dataset Finished')
 
     # model
