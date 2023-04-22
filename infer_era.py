@@ -91,8 +91,8 @@ if __name__ == "__main__":
             Metrics.save_numpy(
                 Metrics.tensor2numpy(visuals['SR'][-1]), '{}/{}_{}_sr.npy'.format(result_path, current_step, idx))
 
-        # Metrics.save_numpy(
-        #     hr_img, '{}/{}_{}_hr.npy'.format(result_path, current_step, idx))
+        Metrics.save_numpy(
+            hr_img, '{}/{}_{}_hr.npy'.format(result_path, current_step, idx))
         # Metrics.save_numpy(
         #     fake_img, '{}/{}_{}_inf.npy'.format(result_path, current_step, idx))
 
