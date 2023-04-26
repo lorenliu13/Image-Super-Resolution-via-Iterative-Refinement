@@ -54,7 +54,7 @@
             "attn_res": [
                 // 16
             ],
-            "res_blocks": 1,
+            "res_blocks": 2,
             "dropout": 0
         },
         "beta_schedule": { // use munual beta_schedule for acceleration
