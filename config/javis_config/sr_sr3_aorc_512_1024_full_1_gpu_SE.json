@@ -43,6 +43,7 @@
             "in_channel": 2,
             "out_channel": 1,
             "inner_channel": 16,
+            "norm_groups": 16,
             "channel_multiplier": [
                 1,
                 2,
