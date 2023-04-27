@@ -178,6 +178,10 @@ class GaussianDiffusion(nn.Module):
     def predict_start_from_noise(self, x_t, t, noise):
         """
         Compute the predicted starting point of the diffusion process (i.e., x0) given the current image x_t and noise
+        xt: the noisy image, i.e., yt in the paper
+        t: the current time step
+        noise: the forward noise "learned" by the U-net
+        return: the estimated start image y0
         """
         return self.sqrt_recip_alphas_cumprod[t] * x_t - \
             self.sqrt_recipm1_alphas_cumprod[t] * noise # equation 10
@@ -186,6 +190,10 @@ class GaussianDiffusion(nn.Module):
         """
         This is for forward noise process q
         Compute the posterior mean and log variance of the distribution q(x t-1 | xt, x0) at given time step t
+        x_start: the first image without any noise, i.e., y0
+        xt: the current noisy image, i.e., yt
+        t: the current time step
+        return: the mean and variance of p(x_{t-1} | x_t, x_0)
         """
         posterior_mean = self.posterior_mean_coef1[t] * \
             x_start + self.posterior_mean_coef2[t] * x_t # compute the posterior mean (equation 4)
@@ -196,10 +204,11 @@ class GaussianDiffusion(nn.Module):
         """
         Compute the backward denoise process p
         Compute the model mean and posterior log variance of the distribution p(x_{t-1} | x_t, x_0)
-        x: the image at time t
+        x: currenty noisy image yt at time step t
         t: time step
         clip_denoised: a boolean indicating whether to clamp the denoised image
         condition_x: if conditioned on x
+        return: the mean and variance of p(x_{t-1} | x_t, x_0)
         """
         batch_size = x.shape[0] # the size of the batch from the input x
         # repeating the sqrt of gamma to batch_size
@@ -229,7 +238,10 @@ class GaussianDiffusion(nn.Module):
     def p_sample(self, x, t, clip_denoised=True, condition_x=None):
         """
         Generate a sample from the distribution p(x_{t-1} | x_t, x_0)
-
+        x: the current noisy image yt at time step t
+        t: the current time step
+        condition_x: the low resolution image
+        return: the new image yt-1 generated at t-1
         """
         # Calculate the model mean and log variance of the denoising step
         model_mean, model_log_variance = self.p_mean_variance(
