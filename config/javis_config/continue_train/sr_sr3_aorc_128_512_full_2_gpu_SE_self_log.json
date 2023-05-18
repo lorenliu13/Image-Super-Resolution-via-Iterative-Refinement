@@ -9,7 +9,7 @@
         "tb_logger": "tb_logger", //
         "results": "results", // where the model will save the results
         "checkpoint": "checkpoint", // where model saves the check point
-        "resume_state": null
+        "resume_state": null,
         // Set up pre-trained model
         "resume_state": "/home/job_7568/I150000_E201" //pretrain model or training state
     },
