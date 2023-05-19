@@ -21,7 +21,7 @@
             "datatype": "npy", //lmdb or img, path of img files
             "l_resolution": 128, // low resolution need to super_resolution
             "r_resolution": 512, // high resolution
-            "batch_size": 8, // set batch size as 64, number of samples to be processed at the same time
+            "batch_size": 4, // set batch size as 64, number of samples to be processed at the same time
             "num_workers": 6, // set how many workers for data loading
             "use_shuffle": true, // whether the dataset should be randomly shuffled before being processed
             "data_len": -1 // -1 represents all data used in train
@@ -55,7 +55,7 @@
             "attn_res": [
                 // 16
             ],
-            "res_blocks": 2,
+            "res_blocks": 3,
             "dropout": 0
         },
         "beta_schedule": { // use munual beta_schedule for acceleration
@@ -85,7 +85,7 @@
         "print_freq": 200, // between 1e-3 and 1e-4
         "optimizer": {
             "type": "adam",
-            "lr": 1e-5
+            "lr": 4e-5
         },
         "ema_scheduler": { // not used now
             "step_start_ema": 5000,
