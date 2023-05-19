@@ -53,7 +53,7 @@
                 16
             ],
             "attn_res": [
-                // 16
+                16
             ],
             "res_blocks": 3,
             "dropout": 0
