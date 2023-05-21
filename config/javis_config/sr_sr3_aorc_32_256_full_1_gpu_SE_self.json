@@ -84,7 +84,7 @@
         "print_freq": 200, // between 1e-3 and 1e-4
         "optimizer": {
             "type": "adam",
-            "lr": 3e-5
+            "lr": 1e-4
         },
         "ema_scheduler": { // not used now
             "step_start_ema": 5000,
